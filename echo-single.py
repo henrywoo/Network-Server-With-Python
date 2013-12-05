@@ -1,4 +1,4 @@
-#!/usr/bin/evn python
+#!/usr/bin/env python
 
 from SocketServer import BaseRequestHandler, TCPServer
 from SocketServer import ForkingTCPServer, ThreadingTCPServer
