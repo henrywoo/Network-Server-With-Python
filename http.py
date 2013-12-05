@@ -1,4 +1,4 @@
-#!/usr/local/python3/bin/python3
+#!/usr/local/python3/bin/evn python3
 # -*- coding: utf-8 -*-
 
 import socket, select

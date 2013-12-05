@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/evn python
 
 import socket
 import select
@@ -7,13 +7,16 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind(('', 2007))
 server_socket.listen(5)
-# server_socket.setblocking(0)
+server_socket.setblocking(1) #blocking IO
 poll = select.poll() # epoll() should work the same
 poll.register(server_socket.fileno(), select.POLLIN)
+count=0
 
 connections = {}
 while True:
     events = poll.poll(10000)  # 10 seconds
+    print count
+    count+=1
     for fileno, event in events:
         if fileno == server_socket.fileno():
             (client_socket, client_address) = server_socket.accept()

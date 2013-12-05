@@ -1,11 +1,12 @@
-#!/usr/bin/python
-
+#!/usr/bin/evn python
+import time
 from SocketServer import BaseRequestHandler, TCPServer
 from SocketServer import ForkingTCPServer, ThreadingTCPServer
 
 class EchoHandler(BaseRequestHandler):
     def handle(self):
         print "got connection from", self.client_address
+        #time.sleep(300)
         while True:
             data = self.request.recv(4096)
             if data:
@@ -16,6 +17,6 @@ class EchoHandler(BaseRequestHandler):
                 break
 
 if __name__ == "__main__":
-    listen_address = ("0.0.0.0", 2007)
+    listen_address = ("0.0.0.0", 2008)
     server = ThreadingTCPServer(listen_address, EchoHandler)
     server.serve_forever()

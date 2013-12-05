@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from SocketServer import BaseRequestHandler, TCPServer
 from SocketServer import ForkingTCPServer, ThreadingTCPServer
@@ -14,6 +14,7 @@ class EchoHandler(BaseRequestHandler):
                 print "disconnect", self.client_address
                 self.request.close()
                 break
+        #print(dir(self.server))
 
 if __name__ == "__main__":
     listen_address = ("0.0.0.0", 2007)

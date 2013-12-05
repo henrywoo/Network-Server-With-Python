@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/evn python
 
 import socket
 import select
