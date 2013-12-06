@@ -37,11 +37,13 @@ def handle_accept(fileno, event):
     connections[client_socket.fileno()] = client_socket
     handlers[client_socket.fileno()] = handle_request
 
-poll.register(server_socket.fileno(), select.POLLIN)
+poll.register(server_socket.fileno(), select.POLLIN|select.EPOLLET)
 handlers[server_socket.fileno()] = handle_accept #socket fd -> functor
 
 while True:
     events = poll.poll(10000)  # 10 seconds
+
     for fileno, event in events:
+        print(fileno)
         handler = handlers[fileno]
         handler(fileno, event)

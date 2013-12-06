@@ -8,8 +8,11 @@ class EchoHandler(BaseRequestHandler):
         print "got connection from", self.client_address
         while True:
             data = self.request.recv(4096)
+            print("got data:"+data)
             if data:
+                print("sent data:"+data)
                 sent = self.request.send(data)    # sendall?
+                print("sent already!")
             else:
                 print "disconnect", self.client_address
                 self.request.close()

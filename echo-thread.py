@@ -17,6 +17,6 @@ class EchoHandler(BaseRequestHandler):
                 break
 
 if __name__ == "__main__":
-    listen_address = ("0.0.0.0", 2008)
+    listen_address = ("0.0.0.0", 2007)
     server = ThreadingTCPServer(listen_address, EchoHandler)
     server.serve_forever()
