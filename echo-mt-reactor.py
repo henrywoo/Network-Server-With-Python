@@ -40,7 +40,7 @@ def SpawnIOProcess(ss):
         for fileno, event in events:
             if fileno==ssno:
                 try:
-                    (client_socket, client_address) = ss.accept()
+                    (client_socket, client_address) = ss.accept() # thundering herd??
                     #print("pid:",os.getpid())
                     lno = client_socket.fileno()
                     #print "got connection from", client_address
@@ -55,12 +55,13 @@ def SpawnIOProcess(ss):
                 if event & select.POLLIN:
                     client_socket = connections[fileno]
                     try:
-                        tmp=client_socket.recv(1024)
                         data=''
-                        while tmp:
-                            data += tmp
+                        while True:
                             #print len(data)
-                            tmp=client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
+                            tmp = client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
+                            if not tmp:
+                              break
+                            data += tmp
                     except Exception as e:pass
                         #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
                 if data:
