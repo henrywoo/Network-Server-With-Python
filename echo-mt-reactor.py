@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 import socket
 import select, time
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Pool, Process
+from multiprocessing import Pool, Process, Value, Lock
 from Queue import Queue
 import os,sys
 
 isblocking = 0
 queuedconnections = 5
-server_socket = None
 
 def handle_input(socket, data):
     try:
@@ -81,11 +79,7 @@ if __name__=='__main__':
     server_socket.setblocking(isblocking)
 
     #should start multiprocess here!!!
-    ps=[]
-    for i in xrange(10):# num of process 5
-        ps.append(Process(target=SpawnIOProcess, args=(server_socket,)))
+    ps=[Process(target=SpawnIOProcess, args=(server_socket,)) for i in range(10)]
 
-    for p in ps:
-        p.start()
-    for p in ps:
-        p.join()
+    for p in ps: p.start()
+    for p in ps: p.join()
