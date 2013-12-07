@@ -1,12 +1,44 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os,sys
+import signal
 import socket
 import select, time
-from multiprocessing import Pool, Process, Value, Lock
-from Queue import Queue
-import os,sys
+import atexit
+import ctypes
+
+from multiprocessing import Pool, Process, Value, Lock, cpu_count
+
+libc = ctypes.CDLL('libc.so.6')
 
 isblocking = 0
 queuedconnections = 5
+counter = None
+
+def handleExit():
+  libc.prctl(1, 15)
+  print("number of thundering herd:%d" % (counter.value()))
+  #print 'exit proc'
+def handleINT(signum,frame):
+  """SIGINT handler"""
+  #print("signum:%d,frame:%s" % (signum,frame))
+  #print("---- good bye pid %d ----" % os.getpid())
+  os._exit(0)
+
+class Counter(object):
+    """http://eli.thegreenplace.net/2012/01/04/shared-counter-with-pythons-multiprocessing/"""
+    def __init__(self, initval=0):
+        self.val = Value('i', initval)
+        self.lock = Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def value(self):
+        with self.lock:
+            return self.val.value
 
 def handle_input(socket, data):
     try:
@@ -19,67 +51,86 @@ def handle_input(socket, data):
             count += sent
             if sent == 0:
                 raise RuntimeError("socket connection broken")
-
     except Exception as e:
         print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
         pass
 
-def SpawnIOProcess(ss):
+def SpawnIOProcess(ss,v):
     """ss - server socket"""
+    #signal.signal(signal.SIGINT,ignoreINT)
+    #v.increment()
+    #print("global counter: %d" % v.value())
     #time.sleep(2)
+    signal.signal(signal.SIGINT,handleINT)
     ep = select.epoll()
     ssno = ss.fileno()
     ep.register(ssno, select.POLLIN|select.EPOLLET) # edge trigger more effective
-    print("register ",ssno," into interest list of pid=",os.getpid())
+    #print("register ",ssno," into interest list of pid=",os.getpid())
     connections = {}
 
-    while True:
-        events = ep.poll()  # infinitely waiting
-        for fileno, event in events:
-            if fileno==ssno:
-                try:
-                    (client_socket, client_address) = ss.accept() # thundering herd??
-                    #print("pid:",os.getpid())
-                    lno = client_socket.fileno()
-                    #print "got connection from", client_address
-                    client_socket.setblocking(isblocking)
-                    ep.register(lno, select.POLLIN|select.EPOLLET)
-                    #print("register ",lno," into interest list of pid=",os.getpid())
-                    connections[lno] = client_socket
-                except Exception as e:
-                    #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
-                    pass
-            else:
-                if event & select.POLLIN:
-                    client_socket = connections[fileno]
-                    try:
-                        data=''
-                        while True:
-                            #print len(data)
-                            tmp = client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
-                            if not tmp:
-                              break
-                            data += tmp
-                    except Exception as e:pass
-                        #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
-                if data:
-                    handle_input(client_socket, data)####
-                else:
-                    ep.unregister(fileno)####
-                    #print("unregister ",fileno," into interest list of pid=",os.getpid())
-                    client_socket.close()
-                    del connections[fileno]
-                    #time.sleep(60)
+    try:
+      while True:
+          events = ep.poll()  # infinitely waiting
+          for fileno, event in events:
+              if fileno==ssno:
+                  try:
+                      (client_socket, client_address) = ss.accept() # thundering herd??
+                      #print("pid:",os.getpid())
+                      lno = client_socket.fileno()
+                      #print "got connection from", client_address
+                      client_socket.setblocking(isblocking)
+                      ep.register(lno, select.POLLIN|select.EPOLLET)
+                      #print("register ",lno," into interest list of pid=",os.getpid())
+                      connections[lno] = client_socket
+                  except Exception as e:
+                      v.increment()
+                      #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+                      pass
+              else:
+                  if event & select.POLLIN:
+                      client_socket = connections[fileno]
+                      try:
+                          data=''
+                          while True:
+                              #print len(data)
+                              tmp = client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
+                              if not tmp:
+                                break
+                              data += tmp
+                      except Exception as e:pass
+                          #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+                  if data:
+                      handle_input(client_socket, data)####
+                  else:
+                      ep.unregister(fileno)####
+                      #print("unregister ",fileno," into interest list of pid=",os.getpid())
+                      client_socket.close()
+                      del connections[fileno]
+                      #time.sleep(60)
+    except:pass
+    os._exit(0)
 
 if __name__=='__main__':
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('', 2007))
-    server_socket.listen(queuedconnections)
-    server_socket.setblocking(isblocking)
+    try:
+      atexit.register(handleExit)
+      counter = Counter(0)
 
-    #should start multiprocess here!!!
-    ps=[Process(target=SpawnIOProcess, args=(server_socket,)) for i in range(10)]
+      server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      server_socket.bind(('', 2007))
+      server_socket.listen(queuedconnections)
+      server_socket.setblocking(isblocking)
 
-    for p in ps: p.start()
-    for p in ps: p.join()
+
+      #should start multiprocess here!!!
+      numOfProc=2
+      print("spawn {0} processes, total {1} cores".format(numOfProc, cpu_count()))
+      ps=[Process(target=SpawnIOProcess, args=(server_socket,counter)) for i in range(numOfProc)]
+
+      for p in ps: p.start()
+      for p in ps: p.join()
+    except Exception as e:
+      print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+      pass
+    finally:
+      sys.exit(0)

@@ -17,7 +17,7 @@ import datetime
 serverHost = 'c58'          # server name, or: 'starship.python.net'
 serverPort = 2007                # non-reserved port used by the server
 
-message = [b'H'*1]*50000          # default text to send to server
+message = [b'H'*1]*5000          # default text to send to server
                                             # requires bytes: b'' or str,encode()
 if len(sys.argv) > 1:
     serverHost = sys.argv[1]                # server from cmd line arg 1
