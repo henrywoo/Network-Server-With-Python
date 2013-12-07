@@ -40,19 +40,22 @@ class Counter(object):
         with self.lock:
             return self.val.value
 
-def handle_input(socket, data):
+def handle_input(client_socket, data):
+    count=0
+    sent=0
+    sz=len(data)
     try:
         #print("got data:",data)
-        count=0
-        sz=len(data)
         while (count<sz):
-            sent = socket.send(data) # sendall() partial???
+            sent = client_socket.send(data) # sendall() partial???
             #print("sent out %d bytes\n" % sent)
             count += sent
             if sent == 0:
-                raise RuntimeError("socket connection broken")
+              raise RuntimeError("socket connection broken")
     except Exception as e:
-        print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+        """reset by peer error"""
+        #print sz, count, sent, socket
+        #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
         pass
 
 def SpawnIOProcess(ss,v):
@@ -91,15 +94,25 @@ def SpawnIOProcess(ss,v):
                       client_socket = connections[fileno]
                       try:
                           data=''
+                          tmp=''
                           while True:
                               #print len(data)
-                              tmp = client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
-                              if not tmp:
-                                break
-                              data += tmp
-                      except Exception as e:pass
-                          #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+                              try:
+                                tmp = client_socket.recv(1024)#,select.MSG_DONTWAIT)####??
+                                if len(tmp)==0:
+                                    break
+                                data += tmp
+                              except Exception as e:
+                                  ##print(len(data), len(tmp))
+                                  ##print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
+                                  break
+                      except Exception as e:
+                          print "pid=",os.getpid(),"|error({0}): {1}".format(e.errno, e.strerror), "|Unexpected error:", sys.exc_info()[0]
+                      finally:
+                          ##print "len(data)=%d" % len(data)
+                          pass
                   if data:
+                      #print(len(data))
                       handle_input(client_socket, data)####
                   else:
                       ep.unregister(fileno)####
@@ -123,7 +136,7 @@ if __name__=='__main__':
 
 
       #should start multiprocess here!!!
-      numOfProc=2
+      numOfProc=1
       print("spawn {0} processes, total {1} cores".format(numOfProc, cpu_count()))
       ps=[Process(target=SpawnIOProcess, args=(server_socket,counter)) for i in range(numOfProc)]
 
