@@ -15,9 +15,6 @@ import datetime
 import os
 import time
 
-serverHost = 'c58'          # server name, or: 'starship.python.net'
-serverPort = 2007                # non-reserved port used by the server
-
 if len(sys.argv) > 1:
     serverHost = sys.argv[1]                # server from cmd line arg 1
     if len(sys.argv) > 2:                   # text from cmd line args 2..n
@@ -31,6 +28,8 @@ def sendall2(sock, data):
 #sockobj.connect((serverHost, serverPort))   # connect to server machine + port
 
 def run(sz,cnum):
+  serverHost = '127.0.0.100'          # server name, or: 'starship.python.net'
+  serverPort = 2007                # non-reserved port used by the server
   message = [b'H'*sz]*cnum          # default text to send to server # requires bytes: b'' or str,encode()
   t1 = datetime.datetime.now()
   counter=0
@@ -40,6 +39,13 @@ def run(sz,cnum):
       sockobj = socket(AF_INET, SOCK_STREAM)      # make a TCP/IP socket object
       sockobj.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
       sockobj.setsockopt(SOL_SOCKET, TCP_NODELAY, 1)
+      #
+      if counter%3==1:
+        sockobj.bind(('192.168.248.133', 0))
+      elif counter%3==2:
+        sockobj.bind(('192.168.248.134', 0))
+      else:
+        sockobj.bind(('192.168.248.128', 0))
       sockobj.connect((serverHost, serverPort))   # connect to server machine + port
       sockobj.setblocking(0)
       #sockobj.send(line)                      # send line to server over socket
@@ -62,13 +68,19 @@ def run(sz,cnum):
       sockobj.close()                             # close socket to send eof to server
     except Exception as e:
       print "pid=",os.getpid(), "|error:", str(e), "|Unexpected error:", sys.exc_info()[0]
-      print counter
+      print counter, cnum
+      sys.exit(0)
       pass
   t2 = datetime.datetime.now()
   c=(t2-t1)
   print("payload={0},number={1},time={2}s{3}us".format(sz,counter,c.seconds,c.microseconds))
-  print("sleep for 35 seconds")
-  time.sleep(35)
+  print("sleep for %d seconds" % 5)
+  time.sleep(5)
 
-cnum=10000
-[run(10,cnum+i*10000) for i in range(3)]
+if len(sys.argv)<2:
+  print "argument too few"
+  sys.exit(0)
+ln=int(sys.argv[1])
+
+cnum=5000
+[run(10,cnum*(1+i)) for i in range(ln)]

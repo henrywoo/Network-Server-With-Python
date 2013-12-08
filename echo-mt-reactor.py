@@ -133,13 +133,13 @@ if __name__=='__main__':
       server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
       server_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
-      server_socket.bind(('', 2007))
+      server_socket.bind(('127.0.0.100', 2007))
       server_socket.listen(queuedconnections)
       server_socket.setblocking(isblocking)
 
 
       #should start multiprocess here!!!
-      numOfProc=4
+      numOfProc=8
       print("spawn {0} processes, total {1} cores".format(numOfProc, cpu_count()))
       ps=[Process(target=SpawnIOProcess, args=(server_socket,counter)) for i in range(numOfProc)]
 
