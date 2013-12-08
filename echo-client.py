@@ -38,6 +38,8 @@ def run(sz,cnum):
     counter+=1
     try:
       sockobj = socket(AF_INET, SOCK_STREAM)      # make a TCP/IP socket object
+      sockobj.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+      sockobj.setsockopt(SOL_SOCKET, TCP_NODELAY, 1)
       sockobj.connect((serverHost, serverPort))   # connect to server machine + port
       sockobj.setblocking(0)
       #sockobj.send(line)                      # send line to server over socket
@@ -48,7 +50,7 @@ def run(sz,cnum):
       while leng<len(line):
           try:
               tmp = sockobj.recv(1024)               # receive line from server: up to 1k
-          except Exception as e:
+          except Exception as ex:
               #print "pid=",os.getpid(),"|error({0}): {1}".format(e.errno, e.strerror), "|Unexpected error:", sys.exc_info()[0]
               continue
           leng += len(tmp)
@@ -59,7 +61,7 @@ def run(sz,cnum):
       ##print('Client received:', data)         # bytes are quoted, was `x`, repr(x)
       sockobj.close()                             # close socket to send eof to server
     except Exception as e:
-      print "pid=",os.getpid(),"|error({0}): {1}".format(e.errno, e.strerror), "|Unexpected error:", sys.exc_info()[0]
+      print "pid=",os.getpid(), "|error:", str(e), "|Unexpected error:", sys.exc_info()[0]
       print counter
       pass
   t2 = datetime.datetime.now()
@@ -69,4 +71,4 @@ def run(sz,cnum):
   time.sleep(35)
 
 cnum=10000
-[run(10240,cnum+i*10000) for i in range(6)]
+[run(10,cnum+i*10000) for i in range(3)]

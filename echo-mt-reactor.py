@@ -82,6 +82,7 @@ def SpawnIOProcess(ss,v):
                       lno = client_socket.fileno()
                       #print "got connection from", client_address
                       client_socket.setblocking(isblocking)
+                      client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)###????
                       ep.register(lno, select.POLLIN|select.EPOLLET)
                       #print("register ",lno," into interest list of pid=",os.getpid())
                       connections[lno] = client_socket
@@ -90,6 +91,7 @@ def SpawnIOProcess(ss,v):
                       #print "pid=",os.getpid(),",error({0}): {1}".format(e.errno, e.strerror), ", Unexpected error:", sys.exc_info()[0]
                       pass
               else:
+                  data=''
                   if event & select.POLLIN:
                       client_socket = connections[fileno]
                       try:
@@ -130,6 +132,7 @@ if __name__=='__main__':
 
       server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+      server_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
       server_socket.bind(('', 2007))
       server_socket.listen(queuedconnections)
       server_socket.setblocking(isblocking)
