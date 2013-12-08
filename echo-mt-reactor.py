@@ -13,7 +13,7 @@ from multiprocessing import Pool, Process, Value, Lock, cpu_count
 libc = ctypes.CDLL('libc.so.6')
 
 isblocking = 0
-queuedconnections = 5
+queuedconnections = 128
 counter = None
 
 def handleExit():
@@ -136,7 +136,7 @@ if __name__=='__main__':
 
 
       #should start multiprocess here!!!
-      numOfProc=1
+      numOfProc=4
       print("spawn {0} processes, total {1} cores".format(numOfProc, cpu_count()))
       ps=[Process(target=SpawnIOProcess, args=(server_socket,counter)) for i in range(numOfProc)]
 
