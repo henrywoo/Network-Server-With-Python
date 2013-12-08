@@ -7,6 +7,8 @@ import socket
 import select, time
 import atexit
 import ctypes
+import psutil
+import datetime
 
 from multiprocessing import Pool, Process, Value, Lock, cpu_count
 
@@ -20,6 +22,16 @@ def handleExit():
   libc.prctl(1, 15)
   print("number of thundering herd:%d" % (counter.value()))
   #print 'exit proc'
+
+def WhichCoreIAmOn():
+    """if libc is too low to have sched_getcpu"""
+    pid=os.getpid()
+    fn='/proc/%d/stat' % pid
+    with open(fn) as f:
+        return int(f.readline().split(' ')[38])
+
+
+
 def handleINT(signum,frame):
   """SIGINT handler"""
   #print("signum:%d,frame:%s" % (signum,frame))
@@ -72,7 +84,17 @@ def SpawnIOProcess(ss,v):
     connections = {}
 
     try:
+      t1=time.clock()
       while True:
+          t2=time.clock()
+          if(t2-t1>1):
+            t1=t2
+            cpuno=WhichCoreIAmOn()
+            cpuusage=int(psutil.cpu_percent(0.1,True)[cpuno])
+            if(cpuusage > 50):
+              time.sleep(0.5)
+          #print(cpuusage)
+          #a=psutil.cpu_percent(0.1,True)
           events = ep.poll()  # infinitely waiting
           for fileno, event in events:
               if fileno==ssno:
@@ -122,7 +144,8 @@ def SpawnIOProcess(ss,v):
                       client_socket.close()
                       del connections[fileno]
                       #time.sleep(60)
-    except:pass
+    except Exception as e:
+        print str(e)
     os._exit(0)
 
 if __name__=='__main__':
@@ -133,7 +156,7 @@ if __name__=='__main__':
       server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
       server_socket.setsockopt(socket.SOL_SOCKET, socket.TCP_NODELAY, 1)
-      server_socket.bind(('127.0.0.100', 2007))
+      server_socket.bind(('192.168.184.133', 2007))
       server_socket.listen(queuedconnections)
       server_socket.setblocking(isblocking)
 

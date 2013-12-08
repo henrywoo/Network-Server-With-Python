@@ -28,7 +28,7 @@ def sendall2(sock, data):
 #sockobj.connect((serverHost, serverPort))   # connect to server machine + port
 
 def run(sz,cnum):
-  serverHost = '127.0.0.100'          # server name, or: 'starship.python.net'
+  serverHost = '192.168.184.133'          # server name, or: 'starship.python.net'
   serverPort = 2007                # non-reserved port used by the server
   message = [b'H'*sz]*cnum          # default text to send to server # requires bytes: b'' or str,encode()
   t1 = datetime.datetime.now()
@@ -41,11 +41,11 @@ def run(sz,cnum):
       sockobj.setsockopt(SOL_SOCKET, TCP_NODELAY, 1)
       #
       if counter%3==1:
-        sockobj.bind(('192.168.248.133', 0))
+        sockobj.bind(('192.168.184.131', 0))
       elif counter%3==2:
-        sockobj.bind(('192.168.248.134', 0))
+        sockobj.bind(('192.168.184.135', 0))
       else:
-        sockobj.bind(('192.168.248.128', 0))
+        sockobj.bind(('192.168.184.136', 0))
       sockobj.connect((serverHost, serverPort))   # connect to server machine + port
       sockobj.setblocking(0)
       #sockobj.send(line)                      # send line to server over socket
@@ -82,5 +82,5 @@ if len(sys.argv)<2:
   sys.exit(0)
 ln=int(sys.argv[1])
 
-cnum=5000
-[run(10,cnum*(1+i)) for i in range(ln)]
+cnum=10000
+[run(10240,cnum*(1+i)) for i in range(ln)]
