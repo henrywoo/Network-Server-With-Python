@@ -8,7 +8,6 @@ import select, time
 import atexit
 import ctypes
 import psutil
-import datetime
 
 from multiprocessing import Pool, Process, Value, Lock, cpu_count
 
@@ -52,7 +51,7 @@ class Counter(object):
         with self.lock:
             return self.val.value
 
-def handle_input(client_socket, data):
+def handle_output(client_socket, data):
     count=0
     sent=0
     sz=len(data)
@@ -137,7 +136,7 @@ def SpawnIOProcess(ss,v):
                           pass
                   if data:
                       #print(len(data))
-                      handle_input(client_socket, data)####
+                      handle_output(client_socket, data)####
                   else:
                       ep.unregister(fileno)####
                       #print("unregister ",fileno," into interest list of pid=",os.getpid())

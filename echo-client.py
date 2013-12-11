@@ -1,24 +1,11 @@
 #!/usr/bin/env python
-"""
-Client side: use sockets to send data to the server, and #print server's
-reply to each message line; 'localhost' means that the server is running
-on the same machine as the client, which lets us test client and server
-on one machine;  to test over the Internet, run a server on a remote
-machine, and set serverHost or argv[1] to machine's domain name or IP addr;
-Python sockets are a portable BSD socket interface, with object methods
-for the standard socket calls available in the system's C library;
-"""
+# -*- coding: utf-8 -*-
 
 import sys
 from socket import *              # portable socket interface plus constants
 import datetime
 import os
 import time
-
-if len(sys.argv) > 1:
-    serverHost = sys.argv[1]                # server from cmd line arg 1
-    if len(sys.argv) > 2:                   # text from cmd line args 2..n
-        message = (x.encode() for x in sys.argv[2:])  
 
 def sendall2(sock, data):
   while data:
@@ -39,7 +26,6 @@ def run(sz,cnum):
       sockobj = socket(AF_INET, SOCK_STREAM)      # make a TCP/IP socket object
       sockobj.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
       sockobj.setsockopt(SOL_SOCKET, TCP_NODELAY, 1)
-      #
       if counter%3==1:
         sockobj.bind(('192.168.184.131', 0))
       elif counter%3==2:
