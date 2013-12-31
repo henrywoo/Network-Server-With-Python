@@ -7,13 +7,14 @@ import tornado.escape
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
-import tornado.web
+from tornado.web import *
 
 from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 
 class BaseHandler(tornado.web.RequestHandler):
+    #@asynchronous
     def get_current_user(self):
         r=self.get_secure_cookie("user")
         print "get_secure_cookie(user)=",r
@@ -26,12 +27,14 @@ class MainHandler(BaseHandler):
         self.write("Hello, " + name)
 
 class LoginHandler(BaseHandler):
+    #@asynchronous
     def get(self):
         self.write('<html><body><form action="/login" method="post">'
                    'Name: <input type="text" name="name">'
                    '<input type="submit" value="Sign in">'
                    '</form></body></html>')
 
+    @asynchronous
     def post(self):
         r=self.get_argument("name")
         print "self.get_argument(name)=",r
